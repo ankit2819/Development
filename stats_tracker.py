@@ -42,23 +42,21 @@ class StatsTracker:
         if vehicle_count > self.stats['peak_vehicle_count']:
             self.stats['peak_vehicle_count'] = vehicle_count
         
-        # Log crossing events
-        if action == "ACTIVE" and not hasattr(self, 'last_was_active') or not self.last_was_active:
+        # Log crossing events (once per transition to ACTIVE)
+        if action == "ACTIVE" and not self.last_was_active:
             self.stats['crossing_events'] += 1
-            self.stats['total_pedestrians_crossed'] += max(1, ped_count)
-            
+            self.stats['total_pedestrians_crossed'] += ped_count
+            if vehicle_count > 0:
+                self.stats['total_vehicles_stopped'] += vehicle_count
+
             self.stats['detection_log'].append({
                 'timestamp': datetime.now().strftime("%H:%M:%S"),
                 'pedestrians': ped_count,
                 'vehicles': vehicle_count,
                 'action': 'CROSSING_ACTIVATED'
             })
-        
+
         self.last_was_active = (action == "ACTIVE")
-        
-        # Count vehicles stopped during crossing
-        if action == "ACTIVE" and vehicle_count > 0:
-            self.stats['total_vehicles_stopped'] += vehicle_count
     
     def get_current_stats(self):
         """Get current statistics for display"""

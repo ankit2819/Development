@@ -79,9 +79,9 @@ class Visualizer:
         ped_count = stats.get('pedestrians', 0)
         vehicle_count = stats.get('vehicles', 0)
         
-        cv2.putText(frame, f"👥 PEDESTRIANS: {ped_count}", (20, 110),
+        cv2.putText(frame, f"PEDESTRIANS: {ped_count}", (20, 110),
                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, self.colors['pedestrian'], 3)
-        cv2.putText(frame, f"🚗 VEHICLES: {vehicle_count}", (20, 145),
+        cv2.putText(frame, f"VEHICLES: {vehicle_count}", (20, 145),
                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, self.colors['vehicle'], 3)
         
         # Performance

@@ -44,11 +44,9 @@ class ObjectDetector:
                 
                 if class_id == self.PERSON_CLASS:
                     pedestrians.append(detection)
-                    print(f"🚶 Detected pedestrian! Confidence: {confidence:.2f}")  # Debug print
                 elif class_id in self.VEHICLE_CLASSES:
                     detection['class_id'] = class_id
                     vehicles.append(detection)
-                    print(f" Detected vehicle! Confidence: {confidence:.2f}")  # Debug print
         
         # Get annotated frame
         annotated_frame = results.plot() if results.boxes is not None else frame
