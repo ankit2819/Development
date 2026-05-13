@@ -13,7 +13,6 @@ class ObjectDetector:
         print(f"[Detector] Loading model: {config.MODEL_PATH}")
         self.model = YOLO(config.MODEL_PATH)
         self.confidence = config.CONFIDENCE_THRESHOLD
-        self.frame_count = 0
         
         # Class IDs for COCO dataset
         self.PERSON_CLASS = 0
@@ -24,37 +23,32 @@ class ObjectDetector:
         Detect objects in frame
         Returns: (pedestrians, vehicles, annotated_frame)
         """
-        self.frame_count += 1
-        
-        # Skip frames for performance
-        if self.frame_count % config.FRAME_SKIP != 0:
-            return [], [], frame
-        
-        # Run inference
-        results = self.model(frame, verbose=False)[0]
-        
         pedestrians = []
         vehicles = []
+        
+        # Run inference on EVERY frame (no skipping)
+        results = self.model(frame, verbose=False, conf=self.confidence)[0]
         
         if results.boxes is not None:
             for box in results.boxes:
                 class_id = int(box.cls[0])
                 confidence = float(box.conf[0])
                 
-                if confidence > self.confidence:
-                    x1, y1, x2, y2 = map(int, box.xyxy[0])
-                    
-                    detection = {
-                        'bbox': (x1, y1, x2, y2),
-                        'confidence': confidence,
-                        'center': ((x1 + x2) // 2, (y1 + y2) // 2)
-                    }
-                    
-                    if class_id == self.PERSON_CLASS:
-                        pedestrians.append(detection)
-                    elif class_id in self.VEHICLE_CLASSES:
-                        detection['class_id'] = class_id
-                        vehicles.append(detection)
+                x1, y1, x2, y2 = map(int, box.xyxy[0])
+                
+                detection = {
+                    'bbox': (x1, y1, x2, y2),
+                    'confidence': confidence,
+                    'center': ((x1 + x2) // 2, (y1 + y2) // 2)
+                }
+                
+                if class_id == self.PERSON_CLASS:
+                    pedestrians.append(detection)
+                    print(f"🚶 Detected pedestrian! Confidence: {confidence:.2f}")  # Debug print
+                elif class_id in self.VEHICLE_CLASSES:
+                    detection['class_id'] = class_id
+                    vehicles.append(detection)
+                    print(f" Detected vehicle! Confidence: {confidence:.2f}")  # Debug print
         
         # Get annotated frame
         annotated_frame = results.plot() if results.boxes is not None else frame
@@ -65,6 +59,5 @@ class ObjectDetector:
         """Return model performance metrics"""
         return {
             'model': config.MODEL_PATH,
-            'confidence': self.confidence,
-            'frames_processed': self.frame_count
+            'confidence': self.confidence
         }

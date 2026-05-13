@@ -2,35 +2,11 @@
 Main entry point for AI Smart Pedestrian Crossing System
 """
 
+import cv2
 import argparse
-import importlib.util
-import os
 import sys
 import time
-
-
-def ensure_runtime_dependencies():
-    """Re-exec inside the repo virtualenv when OpenCV is unavailable."""
-    if importlib.util.find_spec("cv2") is not None:
-        return
-
-    project_root = os.path.dirname(__file__)
-    venv_python = os.path.join(os.path.dirname(__file__), ".venv", "bin", "python")
-    in_project_venv = os.path.realpath(sys.prefix) == os.path.realpath(os.path.join(project_root, ".venv"))
-
-    if os.path.exists(venv_python) and not in_project_venv:
-        print("[Runtime] cv2 not found in current Python. Switching to project virtualenv...")
-        os.execv(venv_python, [venv_python, __file__, *sys.argv[1:]])
-
-    raise ModuleNotFoundError(
-        "No module named 'cv2'. Install dependencies with: "
-        "python3 -m venv .venv && .venv/bin/python -m pip install opencv-python ultralytics numpy"
-    )
-
-
-ensure_runtime_dependencies()
-
-import cv2
+import os
 
 from detector import ObjectDetector
 from crossing_logic import CrossingController
@@ -67,6 +43,8 @@ class PedestrianCrossingSystem:
         print("🎮 Controls:")
         print("   Q - Quit | S - Screenshot | R - Reset Stats")
         print("   H - Toggle Boxes | SPACE - Pause")
+        print("-"*50)
+        print("🎥 Move in front of camera to test detection!")
         print("-"*50)
         
         while True:
@@ -153,12 +131,6 @@ class PedestrianCrossingSystem:
                 source_type = f"Video: {os.path.basename(source)}"
             
             if not cap.isOpened():
-                if source_type == "Webcam" and sys.platform == "darwin":
-                    print(" Camera access failed on macOS.")
-                    print("  1. Fully quit Terminal, then open it again.")
-                    print("  2. Re-run the command and click Allow when prompted.")
-                    print("  3. If it still fails, open System Settings > Privacy & Security > Camera")
-                    print("     and make sure Terminal is enabled.")
                 print(f" Error: Cannot open source - {source}")
                 return None
             
@@ -184,35 +156,14 @@ class FPSCounter:
             self.start_time = time.time()
         return self.fps
 
-def normalize_cli_args(argv):
-    """Accept common malformed flag spacing like `-- source 0`."""
-    normalized = []
-    i = 0
-
-    while i < len(argv):
-        current = argv[i]
-
-        if current == "--" and i + 1 < len(argv):
-            next_token = argv[i + 1].lstrip("-")
-            if next_token in {"source", "model"}:
-                normalized.append(f"--{next_token}")
-                i += 2
-                continue
-
-        normalized.append(current)
-        i += 1
-
-    return normalized
-
 def main():
     parser = argparse.ArgumentParser(
         description='AI Smart Pedestrian Crossing System',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python main.py --source 0              # Use webcam
-  python main.py --source video.mp4      # Use video file
-  python main.py --source test.mp4 --model yolov8s.pt
+  python3 main.py --source 0              # Use webcam
+  python3 main.py --source video.mp4      # Use video file
         """
     )
     
@@ -221,7 +172,7 @@ Examples:
     parser.add_argument('--model', type=str, default=config.MODEL_PATH,
                        help='YOLO model path (default: yolov8n.pt)')
     
-    args = parser.parse_args(normalize_cli_args(sys.argv[1:]))
+    args = parser.parse_args()
     
     # Update config if different model specified
     if args.model != config.MODEL_PATH:
